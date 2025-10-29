@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function Registro() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
         apellidoP: '',
@@ -42,7 +44,7 @@ export default function Registro() {
             if (response.ok) {
                 const data = await response.json();
                 alert(data.message);
-                window.location.href = "/login"; // Redirige al login después del registro exitoso
+                navigate(`/login/student`); // Redirige al login después del registro exitoso
             } else {
                 const error = await response.json();
                 alert(error.error);

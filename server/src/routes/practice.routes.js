@@ -3,12 +3,21 @@ const auth = require("../middleware/auth");
 const allow = require("../middleware/rbac");
 const Practice = require("../models/Practice");
 const c = require("../controllers/practice.controller");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 
 // Endpoint to create a practice and set status to 'pendiente'
-router.post("/", auth, allow('student'), async (req, res) => {
+router.post("/", auth, allow('student'), upload.fields([
+  { name: "firmaAlumno", maxCount: 1 },
+  { name: "firmaEmpresa", maxCount: 1 }
+]), async (req, res) => {
   try {
     const practiceData = { ...req.body, status: "pendiente", student: req.user.id };
+    
+    if (req.files?.firmaAlumno?.[0]) practiceData.firmaAlumno = req.files.firmaAlumno[0].buffer;
+    if (req.files?.firmaEmpresa?.[0]) practiceData.firmaEmpresa = req.files.firmaEmpresa[0].buffer;
+    
     const practice = new Practice(practiceData);
     await practice.save();
     res.status(201).json(practice);
@@ -28,13 +37,13 @@ router.get("/", auth, allow('professor', 'secretary'), async (req, res) => {
 });
 
 // Endpoint to list practices of the authenticated student
-router.get("/mine", auth, allow(0), c.listMine);
+router.get("/mine", auth, allow('student'), c.listMine);
 
 // Endpoint to review milestones by staff
-router.post("/review", auth, allow(1, 2), c.reviewMilestone);
+router.post("/review", auth, allow('professor', 'secretary'), c.reviewMilestone);
 
 // Endpoint to update practice status by Secretaría
-router.patch("/:id/status", auth, allow(1), async (req, res) => {
+router.patch("/:id/status", auth, allow('secretary'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
