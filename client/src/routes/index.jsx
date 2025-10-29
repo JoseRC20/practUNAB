@@ -7,7 +7,6 @@ import PerfilAlumno from '../components_Alumno/PerfilAlumno';
 import FormAlumno from '../components_Alumno/FormAlumno';
 import Hitos from '../components_Alumno/Hitos';
 import HomeAlumno from '../components_Alumno/HomeAlumno';
-import Buttons from '../utils/Buttons';
 
 const AppRoutes = () => {
     return (

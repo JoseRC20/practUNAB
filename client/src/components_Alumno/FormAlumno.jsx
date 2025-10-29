@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function FormAlumno() {
+    const navigate = useNavigate();
     const [status,setStatus] = useState("");
     const { token } = useAuth();
     const [formData, setFormData] = useState({
         jornada: '',
         tipoPractica: '',
         career: '',
-        fecha_inicio: '',
-        fecha_termino: '',
+        fechaInicioPractica: '',
+        fechaTerminoPractica: '',
         empresaNombre: '',
         empresaRut: '',
         empresaGiro: '',
@@ -35,27 +37,36 @@ export default function FormAlumno() {
 
      const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (e) => {
+        const { name, files } = e.target;
+        setFormData(prev => ({ ...prev, [name]: files && files[0] ? files[0] : null }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const fd = new FormData();
+
+            Object.keys(formData).forEach(key => {
+                const val = formData[key];
+                if (val !== null && val !== undefined) {
+                    fd.append(key, val);
+                }
+            });
+
             const response = await fetch(`http://localhost:5000/api/practices`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}` // Use token from Context API
-                },
-                body: JSON.stringify(formData),
+                headers: {Authorization: `Bearer ${token}`},
+                body: fd,
             });
 
             if (response.ok) {
-                const data = await response.json();
+                await response.json();
                 alert("Formulario enviado con éxito");
+                navigate("/HomeAlumno");
             } else {
                 const error = await response.json();
                 alert(`Error: ${error.message || "No se pudo enviar el formulario"}`);
@@ -95,8 +106,8 @@ export default function FormAlumno() {
                         type="date"
                         className="form-control"
                         id="fecha_inicio"
-                        name="fecha_inicio"
-                        value={formData.fecha_inicio}
+                        name="fechaInicioPractica"
+                        value={formData.fechaInicioPractica}
                         onChange={handleChange}
                         required
                         disabled={status === "aprobado"}
@@ -108,8 +119,8 @@ export default function FormAlumno() {
                         type="date"
                         className="form-control"
                         id="fecha_termino"
-                        name="fecha_termino"
-                        value={formData.fecha_termino}
+                        name="fechaTerminoPractica"
+                        value={formData.fechaTerminoPractica}
                         onChange={handleChange}
                         required
                         disabled={status === "aprobado"}
@@ -140,13 +151,13 @@ export default function FormAlumno() {
                 </div>
                 <div className='mb-3'>
                     <h3>Jornada</h3>
-                    <input type="radio" name="jornada" value="Diurna" disabled={status === "aprobado"}/> Diurna
-                    <input type="radio" name="jornada" value="Vespertina" className= "ms-4" disabled={status === "aprobado"}/> Vespertina
+                    <input type="radio" name="jornada" value="Diurna" checked={formData.jornada === "Diurna"} onChange={handleChange} disabled={status === "aprobado"}/> Diurna
+                    <input type="radio" name="jornada" value="Vespertina" checked={formData.jornada === "Vespertina"} onChange={handleChange} className= "ms-4" disabled={status === "aprobado"}/> Vespertina
                 </div>
                 <div className='mb-3'>
                     <h3>Tipo de práctica</h3>
-                    <input type="radio" name="tipoPractica" value="Práctica I" disabled={status === "aprobado"}/> Práctica I
-                    <input type="radio" name="tipoPractica" value="Práctica II" className= "ms-4" disabled={status === "aprobado"}/> Práctica II
+                    <input type="radio" name="tipoPractica" value="Práctica I" checked={formData.tipoPractica === "Práctica I"} onChange={handleChange} disabled={status === "aprobado"}/> Práctica I
+                    <input type="radio" name="tipoPractica" value="Práctica II" checked={formData.tipoPractica === "Práctica II"} onChange={handleChange} className= "ms-4" disabled={status === "aprobado"}/> Práctica II
                 </div>
                 <h1>Datos Empresa</h1>
                 <div className="mb-3">
@@ -366,36 +377,24 @@ export default function FormAlumno() {
                 </div>
 
                 <div className="mb-3">
-                    <label htmlFor="firma_alumno" className="form-label">Adjuntar firma Alumno</label>
+                    <label htmlFor="firmaAlumno" className="form-label">Adjuntar firma Alumno</label>
                     <input
                         type="file"
                         className="form-control"
-                        id="firma_alumno"
-                        name="firma_alumno"
+                        id="firmaAlumno"
+                        name="firmaAlumno"
                         accept=".png, .pdf" /* Permite solo archivos PNG o PDF */
-                        onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                                console.log("Archivo seleccionado:", file.name);
-                            }
-                        }}
-                        value={formData.firmaAlumno}
+                        onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />
-                    <label htmlFor="firma_alumno" className="form-label mt-3">Adjuntar timbre y firma de la Empresa</label>
+                    <label htmlFor="firmaEmpresa" className="form-label mt-3">Adjuntar timbre y firma de la Empresa</label>
                     <input
                         type="file"
                         className="form-control"
-                        id="firma_alumno"
-                        name="firma_alumno"
+                        id="firmaEmpresa"
+                        name="firmaEmpresa"
                         accept=".png, .pdf" /* Permite solo archivos PNG o PDF */
-                        onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                                console.log("Archivo seleccionado:", file.name);
-                            }
-                        }}
-                        value={formData.firmaEmpresa}
+                        onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />
                 </div>
