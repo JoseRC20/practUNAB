@@ -2,6 +2,7 @@ const router = require("express").Router();
 const auth = require("../middleware/auth");
 const allow = require("../middleware/rbac");
 const Practice = require("../models/Practice");
+const StudentProfile = require("../models/StudentProfile");
 const c = require("../controllers/practice.controller");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -20,7 +21,24 @@ router.post("/", auth, allow('student'), upload.fields([
     
     const practice = new Practice(practiceData);
     await practice.save();
-    res.status(201).json(practice);
+      // Link the created practice into the student's profile (if exists)
+      try {
+        await StudentProfile.findOneAndUpdate(
+          { user: req.user.id },
+          { $push: { practices: practice._id } }
+        );
+      } catch (err) {
+        // log but don't block the response — profile update failure isn't fatal here
+        console.error('Failed to link practice to student profile:', err);
+      }
+
+      // Sanitize response: remove raw signature buffers before sending
+      const response = practice.toObject();
+      if (response.firmaAlumno) delete response.firmaAlumno;
+      if (response.firmaEmpresa) delete response.firmaEmpresa;
+      if (response.__v) delete response.__v;
+
+      res.status(201).json(response);
   } catch (error) {
     res.status(500).json({ message: "Error al crear la práctica", error });
   }

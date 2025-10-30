@@ -3,14 +3,14 @@ import { useAuth } from '../context/AuthContext';
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from 'react-router-dom';
 import Buttons from "../utils/Buttons";
-
-
+import PerfilAlumno from "./PerfilAlumno";
 
 export default function HomeAlumno() {
     const navigate = useNavigate();
     const [userName, setUserName] = useState(""); // Nombre del alumno
     const [notifications, setNotifications] = useState([]); // Notificaciones
     const { token } = useAuth();
+    const [profile, setProfile] = useState(null);
 
 
     useEffect(() => {
@@ -19,24 +19,39 @@ export default function HomeAlumno() {
         if (role !== 'student') { // Verifica si el rol no es de Alumno
             alert('Acceso denegado. Solo los alumnos pueden acceder a esta página.');
             navigate('/'); // Redirige al inicio
+            return;
         }
 
-    }, []);
+        // Fetch student profile when token is available
+        const fetchProfile = async () => {
+            if (!token) return;
+            try {
+                const res = await fetch('http://localhost:5000/api/students/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    console.error('Failed to fetch profile', await res.text());
+                    return;
+                }
+                const data = await res.json();
+                setProfile(data.profile);
+                // set visible user name from profile.user or Names
+                const name = data.profile?.user?.firstName || data.profile?.Names || '';
+                const last = data.profile?.user?.lastNamePaternal || data.profile?.lastNamePaternal || '';
+                setUserName(`${name} ${last}`.trim());
+            } catch (err) {
+                console.error('Error fetching profile', err);
+            }
+        };
+        fetchProfile();
+
+    }, [token, navigate]);
 
     return (
         <div className="d-flex vh-100"> {/* Contenedor principal */}
             <div className="flex-grow-1 p-3"> {/* Contenido principal */}
                 <Buttons />
-                <h1>Bienvenido, {userName}</h1>
-
-                <div className="mt-4">
-                    <h2>Notificaciones</h2>
-                    <ul>
-                        {notifications.map((note, index) => (
-                            <li key={index}>{note}</li>
-                        ))}
-                    </ul>
-                </div>
+                {profile ? <PerfilAlumno profile={profile} /> : <PerfilAlumno />}
             </div> {/* Cierra el contenedor principal correctamente */}
             
         </div>

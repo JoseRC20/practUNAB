@@ -1,7 +1,8 @@
-const { FileEnumerator } = require("eslint/use-at-your-own-risk");
 const mongoose = require("mongoose");
 
 const PracticaProfileSchema = new mongoose.Schema({
+    student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
     fechaInicioPractica: { type: Date, required: true },
     fechaTerminoPractica: { type: Date, required: true },
     career: { type: String, required: true },
@@ -27,13 +28,12 @@ const PracticaProfileSchema = new mongoose.Schema({
     observacion: { type: String, required: true },
     firmaAlumno: { type: Buffer, required: true },
     firmaEmpresa: { type: Buffer, required: true },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
+
     status: {
         type: String,
         enum: ['no iniciado', 'pendiente', 'rechazado', 'aprobado'],
         default: 'no iniciado',
     },
-});
+},{ timestamps: true });
 
 module.exports = mongoose.model("PracticaProfile", PracticaProfileSchema);

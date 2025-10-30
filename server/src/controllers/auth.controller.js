@@ -4,11 +4,49 @@ const { signAccess, signRefresh } = require("../utils/tokens");
 
 exports.signup = async (req, res, next) => {
     try {
-        const { email, password, role } = req.body;
-        const user = await User.create({ email, password, role });
+        // Accept full registration data
+        const { name, apellidoP, apellidoM, rut, phone, email, password, role, institutionalEmail } = req.body;
+        const allowedRoles = ["student", "teacher", "secretary"];
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({ error: "Rol inválido" });
+        }
+
+        // Create User (authentication/identity)
+        const user = await User.create({
+            firstName: name,
+            lastNamePaternal: apellidoP,
+            lastNameMaternal: apellidoM,
+            rut,
+            phone,
+            email,
+            password,
+            role
+        });
+
+        // If student, create associated StudentProfile
+        let studentProfile = null;
+        if (role === 'student') {
+            studentProfile = await StudentProfile.create({
+                user: user._id,
+                Names: name,
+                lastNamePaternal: apellidoP,
+                lastNameMaternal: apellidoM,
+                rut,
+                phone,
+                institutionalEmail: institutionalEmail || email,
+                password, // will be hashed by StudentProfile pre-save hook
+                practices: []
+            });
+            // Remove sensitive field before returning
+            if (studentProfile && studentProfile.password) {
+                studentProfile = studentProfile.toObject();
+                delete studentProfile.password;
+            }
+        }
+
         const access = signAccess({ id: user._id, role: user.role, email: user.email });
         const refresh = signRefresh({ id: user._id });
-        res.status(201).json({ user: { id: user._id, email, role}, tokens: { access, refresh }});
+        res.status(201).json({ user: { id: user._id, email: user.email, role: user.role}, tokens: { access, refresh }, studentProfile });
     } catch (e) { next(e); }
 };
 

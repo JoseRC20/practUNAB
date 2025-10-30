@@ -33,21 +33,39 @@ export default function Registro() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Ensure role is present (fallback to 'student') and include institutionalEmail
+            const payload = {
+                ...formData,
+                role: formData.role || 'student',
+                institutionalEmail: formData.email
+            };
+
             const response = await fetch("http://localhost:5000/api/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
+            const data = await response.json();
             if (response.ok) {
-                const data = await response.json();
-                alert(data.message);
-                navigate(`/login/student`); // Redirige al login después del registro exitoso
+                // New server responses may return tokens and user info instead of a message.
+                if (data.message) alert(data.message);
+                else if (data.user) alert('Registro exitoso');
+
+                // Optionally store tokens (if returned) and redirect to login or dashboard
+                if (data.tokens && data.tokens.access) {
+                    // store access token in localStorage (you may prefer httpOnly cookies instead)
+                    localStorage.setItem('accessToken', data.tokens.access);
+                }
+
+                navigate(`/login/student`);
             } else {
-                const error = await response.json();
-                alert(error.error);
+                // Prefer returned structured errors when available
+                if (data.error) alert(data.error);
+                else if (data.errors) alert(JSON.stringify(data.errors));
+                else alert('Error al registrar el usuario');
             }
         } catch (err) {
             console.error("Error:", err);
