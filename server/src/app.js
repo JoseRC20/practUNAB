@@ -5,7 +5,7 @@ const { CORS_ORIGIN } = require("./config/env");
 const mountSecurity = require("./middleware/security");
 const routes = require("./routes");
 const errorHandler = require("./middleware/error");
-const auth = require("./middleware/auth");
+
 
 const app = express(); // Initialize app before using it
 
@@ -24,6 +24,5 @@ app.use((req, res, next) => {
     console.log(`Solicitud recibida: ${req.method} ${req.url}`);
     next();
 });
-
 
 module.exports = app;

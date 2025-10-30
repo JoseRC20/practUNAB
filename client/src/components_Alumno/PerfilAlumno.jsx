@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 export default function PerfilAlumno({ profile }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   // identity editing disabled in this view
   const [isEditingSupervisor, setIsEditingSupervisor] = useState(false);
@@ -11,33 +13,53 @@ export default function PerfilAlumno({ profile }) {
   const [isApprovedBySecretary, setIsApprovedBySecretary] = useState(false);
 
   useEffect(() => {
-    // If a profile prop is provided (from API), use it; otherwise fallback to localStorage
-    if (profile) {
-      // Map profile fields into local user shape expected by this component
-      const mapped = {
-        name: profile.Names || (profile.user && profile.user.firstName) || '',
-        lastNamePaternal: profile.lastNamePaternal || (profile.user && profile.user.lastNamePaternal) || '',
-        email: profile.institutionalEmail || (profile.user && profile.user.email) || '',
-        supervisorName: profile.practices && profile.practices.length ? profile.practices[profile.practices.length - 1].supervisorNombre : '',
-        supervisorEmail: profile.practices && profile.practices.length ? profile.practices[profile.practices.length - 1].supervisorEmail : '',
-        startDate: profile.practices && profile.practices.length ? profile.practices[profile.practices.length - 1].fechaInicioPractica : '',
-        endDate: profile.practices && profile.practices.length ? profile.practices[profile.practices.length - 1].fechaTerminoPractica : '',
-        practiceStatus: profile.practices && profile.practices.length ? profile.practices[profile.practices.length - 1].status : profile.status || '',
-      };
-  setUser(mapped);
-      setEndDate(mapped.endDate || "");
-      setPracticeStatus(mapped.practiceStatus || false);
-      setIsApprovedBySecretary((mapped.practiceStatus || '') === 'aprobado');
-    } else {
-      // Fetch user data from localStorage as a fallback
-      const storedUser = localStorage.getItem("userData");
-      if (storedUser) {
+  // Re-run when `profile` changes (e.g. after async login/fetch)
+  if (profile) {
+    const mapped = {
+      name: profile.Names || (profile.user && profile.user.firstName) || '',
+      lastNamePaternal: profile.lastNamePaternal || (profile.user && profile.user.lastNamePaternal) || '',
+      email: profile.institutionalEmail || (profile.user && profile.user.email) || '',
+      supervisorName:
+        profile.practices && profile.practices.length
+          ? profile.practices[profile.practices.length - 1].supervisorNombre
+          : '',
+      supervisorEmail:
+        profile.practices && profile.practices.length
+          ? profile.practices[profile.practices.length - 1].supervisorEmail
+          : '',
+      startDate:
+        profile.practices && profile.practices.length
+          ? profile.practices[profile.practices.length - 1].fechaInicioPractica
+          : '',
+      endDate:
+        profile.practices && profile.practices.length
+          ? profile.practices[profile.practices.length - 1].fechaTerminoPractica
+          : '',
+      practiceStatus:
+        profile.practices && profile.practices.length
+          ? profile.practices[profile.practices.length - 1].status
+          : profile.status || 'no iniciado',
+    };
+    setUser(mapped);
+    setEndDate(mapped.endDate || "");
+    setPracticeStatus(mapped.practiceStatus || 'no iniciado');
+    setIsApprovedBySecretary((mapped.practiceStatus || '') === 'aprobado');
+  } else {
+    // fallback to localStorage if login didn't populate `profile` yet
+    const storedUser = localStorage.getItem("userData");
+    if (storedUser) {
+      try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setEndDate(parsedUser.endDate || "");
+        setPracticeStatus(parsedUser.practiceStatus || parsedUser.status || 'no iniciado');
+        setIsApprovedBySecretary((parsedUser.practiceStatus || parsedUser.status || '') === 'aprobado');
+      } catch (e) {
+        console.error("Failed to parse userData from localStorage", e);
       }
     }
-  }, []);
+  }
+}, [profile]);
 
   // identity editing disabled (no-op)
 
@@ -67,6 +89,25 @@ export default function PerfilAlumno({ profile }) {
     setIsEditingSupervisor(false);
   };
 
+  const handleLogout = async () => {
+      const token = localStorage.getItem("authToken");
+      // optional: notify backend (silently ignore errors)
+      if (token) {
+        try {
+          await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+        } catch (e) { /* ignore */ }
+      }
+      // remove client-side auth data
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userData");
+      // if you use an auth context with saveToken, call it here (uncomment):
+      // const { saveToken } = useAuth(); saveToken(null);
+      navigate("/login/student");
+  };
+
   const handleEndDateChange = (e) => {
     if (isApprovedBySecretary) {
       setEndDate(e.target.value);
@@ -92,7 +133,7 @@ export default function PerfilAlumno({ profile }) {
           <h2>Perfil de Usuario</h2>
         </div>
         <div className="card-body">
-            <h4 className="card-title">{`${user.name} ${user.apellidoP || ''}`.trim()}</h4>
+            <h4 className="card-title">{`${user.name} ${user.lastNamePaternal || ''}`.trim()}</h4>
             <p className="card-text mt-4">
               <strong>Correo Institucional:</strong> {user.email}
             </p>
@@ -169,7 +210,9 @@ export default function PerfilAlumno({ profile }) {
               )}
             </>
           )}
-          <button className="btn btn-secondary">Cerrar Sesión</button>
+          <button type="button" className="btn btn-secondary" onClick={handleLogout}>
+            Cerrar Sesión
+          </button>
         </div>
       </div>
     </div>
