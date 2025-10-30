@@ -1,13 +1,12 @@
 const router = require("express").Router();
 const auth = require("../middleware/auth");
 const allow = require("../middleware/rbac");
+const studentController = require("../controllers/student.controller");
 
-router.get("/me",     auth, allow(0), require("../controllers/student.controller").getMe);
-router.put("/me",     auth, allow(0), require("../controllers/student.controller").upsertMe);
-router.get("/HomeAlumno", auth, (req, res) => {
-    if (req.user.role !== "student") {
-        return res.status(403).json({ message: "Acceso denegado. Solo los estudiantes pueden acceder a esta página." });
-    }
+// Use explicit role name 'student' with the RBAC middleware
+router.get("/me", auth, allow('student'), studentController.getMe);
+router.put("/me", auth, allow('student'), studentController.upsertMe);
+router.get("/HomeAlumno", auth, allow('student'), (req, res) => {
     res.status(200).json({ message: "Bienvenido al Home del Estudiante" });
 });
 
