@@ -34,6 +34,14 @@ export default function DashboardSecretaria() {
         navigate(`/secretary/view/${practiceId}`);
     }
 
+    // derive simple stats from the loaded items (practices)
+    const stats = {
+        total: items.length,
+        pending: items.filter(i => String(i.status || '').toLowerCase().includes('pendient')).length,
+        approved: items.filter(i => ['aprobado', 'aprobada'].includes(String(i.status || '').toLowerCase())).length,
+        reject: items.filter(i => ['rechazado', 'rechazada'].includes(String(i.status || '').toLowerCase())).length
+    };
+
     const changeStatus = async (practiceId, status) => {
         try {
             const res = await fetch(`http://localhost:5000/api/practices/${practiceId}/status`, {
@@ -56,8 +64,48 @@ export default function DashboardSecretaria() {
 
     return (
         <div className="container mt-4">
-            <h2>Panel Secretaría</h2>
-            <p>Lista de estudiantes con formularios pendientes de aprobación</p>
+            <h2 className='text-center mt-3'>Panel Secretaría</h2>
+            <span className="d-block w-50 bg-danger my-2 mx-auto mb-2" style={{height:'5px'}}></span>
+            <p className='mt-2 mb-4'>Gestión de aprobación o rechazo de prácticas profesionales</p>
+
+            <div className="row g-3 mb-4 ms-1 me-1">
+                <div className="col-6 col-md-3">
+                    <div className="card h-100 shadow-sm">
+                        <div className="card-body">
+                            <small className="text-muted">Solicitudes totales</small>
+                            <h3 className="mt-2 mb-0">{stats.total}</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="col-6 col-md-3">
+                    <div className="card h-100 shadow-sm">
+                        <div className="card-body">
+                            <small className="text-muted">Pendientes</small>
+                            <h3 className="mt-2 mb-0">{stats.pending}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-6 col-md-3">
+                    <div className="card h-100 shadow-sm">
+                        <div className="card-body">
+                            <small className="text-muted">Aprobadas</small>
+                            <h3 className="mt-2 mb-0">{stats.approved}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-6 col-md-3">
+                    <div className="card h-100 shadow-sm">
+                        <div className="card-body">
+                            <small className="text-muted">Rechazadas</small>
+                            <h3 className="mt-2 mb-0">{stats.approved}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {loading && <div>Loading...</div>}
             {error && <div className="alert alert-danger">{error}</div>}
             {!loading && !error && (
