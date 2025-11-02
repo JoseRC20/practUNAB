@@ -80,11 +80,15 @@ export default function ListStudents({ professorId }) {
 
     return (
         <div>
-            <h3>Students List</h3>
+            <h2 className='text-center mt-4'>Panel Profesor</h2>
+            <span className="d-block w-50 bg-danger my-2 mx-auto mb-2" style={{height:'5px'}}></span>
+            <p className='mt-3 ms-2'>Observar lista de estudiantes asignados y poder apreciar detalles de cada estado del alumno</p>
+            
+            <h3 className='m-3 ms-2'>Estudiantes asignados</h3>
             {students.length === 0 ? (
                 <p>No students assigned.</p>
             ) : (
-                <div className="table-responsive">
+                <div className="table-responsive ms-3 me-3 mb-4">
                     <table className="table table-striped">
                         <thead>
                             <tr>
