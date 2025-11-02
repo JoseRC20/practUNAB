@@ -26,7 +26,7 @@ export default function Navbar() {
                         <h1 className='text-white'>practUNAB</h1>
                     </a>
                 </div>
-                {isLoggedIn && role === 'admin' || role === 'secretary' && (
+                {isLoggedIn && role === 'admin' || role === 'secretary' || role === 'professor' && (
                     <button className="btn btn-outline-light ms-auto me-3" onClick={handleLogout}>
                         Cerrar sesión
                     </button>

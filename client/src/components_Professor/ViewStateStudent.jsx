@@ -125,13 +125,15 @@ export default function ViewStateStudent({ student }) {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
-    <div>
-      <h4>Estado formulario del alumno</h4>
-      <p><strong>Alumno:</strong> {student.Names || student.firstName} {student.lastNamePaternal}</p>
-      <p><strong>Email:</strong> {student.institutionalEmail}</p>
-      <p><strong>Estado práctica:</strong> {practice ? practice.status : 'no iniciado'}</p>
+    <div className="container mt-3 mb-5 ">
+      <div className='container card h-100 shadow-sm p-3 mb-4'>
+        <h4>Estado formulario del alumno</h4>
+        <p><strong>Alumno:</strong> {student.Names || student.firstName} {student.lastNamePaternal} {student.lastNameMaternal}</p>
+        <p><strong>Correo:</strong> {student.institutionalEmail}</p>
+        <p><strong>Estado práctica:</strong> {practice ? practice.status : 'no iniciado'}</p>
+      </div>
 
-      <h5>Hitos</h5>
+      <h3>Hitos</h3>
       {hitos.length === 0 && <p>No hay hitos registrados.</p>}
       <div className="list-group">
         {hitos.map(h => (
