@@ -9,22 +9,14 @@ const StudentProfileSchema = new mongoose.Schema({
     rut: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     institutionalEmail: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    professorEmail: { type: String },
+    // Link to the professor profile (optional)
+    professor: { type: mongoose.Schema.Types.ObjectId, ref: 'ProfessorProfile' },
     practices: [{ type: mongoose.Schema.Types.ObjectId, ref: "PracticaProfile" }], // Array of professional practices
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 
-StudentProfileSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (err) {
-        next(err);
-    }
-});
 
 // Ensure the referenced user exists and has the 'student' role
 StudentProfileSchema.pre('validate', async function (next) {
@@ -40,8 +32,6 @@ StudentProfileSchema.pre('validate', async function (next) {
     }
 });
 
-StudentProfileSchema.methods.comparePassword = function(plain) {
-    return bcrypt.compare(plain, this.password);
-}
+// Passwords are stored only on the User model. StudentProfile does not keep credentials.
 
 module.exports = mongoose.model("StudentProfile", StudentProfileSchema);

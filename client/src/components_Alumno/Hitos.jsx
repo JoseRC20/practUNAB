@@ -5,7 +5,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 export default function Hitos() {
     const [hito1File, setHito1File] = useState(null);
     const [hito2File, setHito2File] = useState(null);
-    const [hitosStatus, setHitosStatus] = useState({}); // {1: 'enviado' | 'no_iniciado', 2: ...}
+    // store full hito info by milestoneNumber: { status, reviewerComments, files, submittedAt, reviewedAt, _id }
+    const [hitosMap, setHitosMap] = useState({});
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -85,10 +86,17 @@ export default function Hitos() {
             const map = {};
             (Array.isArray(data) ? data : []).forEach(h => {
                 if (h.milestoneNumber !== undefined && h.milestoneNumber !== null) {
-                    map[h.milestoneNumber] = normalizeStatus(h.status);
+                    map[h.milestoneNumber] = {
+                        status: h.status || 'no_iniciado',
+                        reviewerComments: h.reviewerComments || '',
+                        files: h.files || [],
+                        submittedAt: h.submittedAt || null,
+                        reviewedAt: h.reviewedAt || null,
+                        _id: h._id,
+                    };
                 }
             });
-            setHitosStatus(map);
+            setHitosMap(map);
         } catch (err) {
             console.error(err);
             setMessage('Error al contactar el servidor.');
@@ -188,15 +196,15 @@ export default function Hitos() {
     };
 
     const isDisabledFor = (milestoneNumber) => {
-        const s = hitosStatus[milestoneNumber];
-        // sólo dos estados: 'no_iniciado' y 'enviado'
-        // bloquear si 'enviado'
-        return s === 'enviado';
+        const info = hitosMap[milestoneNumber];
+        const s = info && info.status ? info.status : 'no_iniciado';
+        // disable if already enviado or aprobado. If rechazado, allow resubmit.
+        return s === 'enviado' || s === 'aprobado';
     };
 
     useEffect(() => {
-        console.log('Hitos status:', hitosStatus, 'loading:', loading, 'message:', message);
-    }, [hitosStatus, loading, message]);
+        console.log('Hitos map:', hitosMap, 'loading:', loading, 'message:', message);
+    }, [hitosMap, loading, message]);
 
     return (
         <div className="container mt-5">
@@ -208,8 +216,11 @@ export default function Hitos() {
             <form>
                 <div className="mb-3">
                     <label htmlFor="hito1" className="form-label">
-                        Hito 1 — Estado: {hitosStatus[1] || 'no_iniciado'}
+                        Hito 1 — Estado: {hitosMap[1]?.status || 'no_iniciado'}
                     </label>
+                    {hitosMap[1] && hitosMap[1].reviewerComments && (
+                        <div className="alert alert-info mt-2">Observación profesor: {hitosMap[1].reviewerComments}</div>
+                    )}
                     <input
                         type="file"
                         className="form-control"
@@ -230,8 +241,11 @@ export default function Hitos() {
 
                 <div className="mb-3">
                     <label htmlFor="hito2" className="form-label">
-                        Hito 2 — Estado: {hitosStatus[2] || 'no_iniciado'}
+                        Hito 2 — Estado: {hitosMap[2]?.status || 'no_iniciado'}
                     </label>
+                    {hitosMap[2] && hitosMap[2].reviewerComments && (
+                        <div className="alert alert-info mt-2">Observación profesor: {hitosMap[2].reviewerComments}</div>
+                    )}
                     <input
                         type="file"
                         className="form-control"

@@ -95,3 +95,22 @@ exports.updateHitoStatus = async (req, res) => {
         res.status(500).json({ message: 'Error updating status', error: err.message });
     }
 };
+
+exports.downloadHitoFile = async (req, res) => {
+    try {
+        const { id, idx } = req.params;
+        const hito = await Hito.findById(id);
+        if (!hito) return res.status(404).json({ message: 'Hito no encontrado' });
+        const index = parseInt(idx, 10);
+        if (Number.isNaN(index) || index < 0 || index >= (hito.files || []).length) {
+            return res.status(400).json({ message: 'File index inválido' });
+        }
+        const fileMeta = hito.files[index];
+        if (!fileMeta || !fileMeta.storagePath) return res.status(404).json({ message: 'Archivo no encontrado' });
+        // Use res.download to send with original name
+        return res.download(fileMeta.storagePath, fileMeta.originalName);
+    } catch (err) {
+        console.error('downloadHitoFile error', err);
+        return res.status(500).json({ message: 'Error descargando archivo', error: err.message });
+    }
+};

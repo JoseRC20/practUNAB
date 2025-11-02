@@ -1,4 +1,5 @@
 const StudentProfile = require("../models/StudentProfile");
+const Practice = require('../models/Practice');
 
 exports.getMe = async (req, res, next) => {
   try {
@@ -62,3 +63,4 @@ exports.createFromRegistration = async (regData, userId) => {
     throw err;
   }
 };
+

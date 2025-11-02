@@ -4,8 +4,8 @@ const { signAccess, signRefresh } = require("../utils/tokens");
 
 exports.signup = async (req, res, next) => {
     try {
-        // Accept full registration data
-        const { name, apellidoP, apellidoM, rut, phone, email, password, role, institutionalEmail } = req.body;
+    // Accept full registration data
+    const { name, apellidoP, apellidoM, rut, phone, email, password, role, institutionalEmail, professorEmail } = req.body;
         const allowedRoles = ["student", "teacher", "secretary"];
         if (!allowedRoles.includes(role)) {
             return res.status(400).json({ error: "Rol inválido" });
@@ -34,9 +34,25 @@ exports.signup = async (req, res, next) => {
                 rut,
                 phone,
                 institutionalEmail: institutionalEmail || email,
-                password, // will be hashed by StudentProfile pre-save hook
+                professorEmail: professorEmail || null,
                 practices: []
             });
+            // If a professorEmail was provided, try to link the student to that professor
+            if (studentProfile && studentProfile.professorEmail) {
+                try {
+                    const ProfessorProfile = require('../models/ProfessorProfile');
+                    const prof = await ProfessorProfile.findOne({ institutionalEmail: studentProfile.professorEmail });
+                    if (prof) {
+                        studentProfile.professor = prof._id;
+                        await studentProfile.save();
+                        // also add the student to the professor's listStudents (avoid duplicates)
+                        await ProfessorProfile.findByIdAndUpdate(prof._id, { $addToSet: { listStudents: studentProfile._id } });
+                    }
+                } catch (err) {
+                    console.error('Failed to auto-link student to professor by email:', err);
+                    // non-fatal
+                }
+            }
             // Remove sensitive field before returning
             if (studentProfile && studentProfile.password) {
                 studentProfile = studentProfile.toObject();
@@ -63,15 +79,19 @@ exports.login = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ error: "Contraseña incorrecta" });
         }
-        // Generar token
-        const token = signAccess({ id: user.id, role: user.role, email: user.email });
-        // Si es estudiante, buscar perfil
+        // Generar access + refresh tokens (same shape as signup)
+        const access = signAccess({ id: user._id, role: user.role, email: user.email });
+        const refresh = signRefresh({ id: user._id });
+
+        // Si es estudiante, buscar perfil y sanitizar
         let studentProfile = null;
         if (user.role === "student") {
             studentProfile = await StudentProfile.findOne({ user: user._id }).lean();
+            if (studentProfile && studentProfile.password) delete studentProfile.password;
         }
-        // Responder con token y perfil si corresponde
-        res.json({ token, studentProfile });
+
+        // Responder con la misma estructura que signup: user + tokens + optional studentProfile
+        res.json({ user: { id: user._id, email: user.email, role: user.role }, tokens: { access, refresh }, studentProfile });
     } catch (err) {
         console.error("Error en el login:", err);
         res.status(500).json({ error: "Error interno del servidor" });

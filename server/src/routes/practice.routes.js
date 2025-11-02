@@ -86,6 +86,40 @@ router.patch("/:id/status", auth, allow('secretary'), async (req, res) => {
   }
 });
 
+// Endpoint to get a practice by id (returns signatures as base64 data URLs)
+router.get('/:id', auth, allow('professor', 'secretary', 'admin', 'student'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`GET /api/practices/${id} requested by user=${req.user?.id} role=${req.user?.role}`);
+  // Include 'rut' so the client can read practice.student?.rut
+  const practice = await Practice.findById(id).populate('student', 'firstName lastNamePaternal lastNameMaternal email rut').lean();
+    if (!practice) {
+      console.log(`Practice not found for id=${id}`);
+      return res.status(404).json({ message: 'Práctica no encontrada' });
+    }
+
+    // If requester is a student, ensure they own the practice
+    if (req.user.role === 'student' && String(practice.student?._id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Convert signature buffers to base64 data URLs if present
+    const out = { ...practice };
+    if (practice.firmaAlumno) {
+      const b = practice.firmaAlumno.buffer || practice.firmaAlumno.data || practice.firmaAlumno;
+      out.firmaAlumno = `data:image/png;base64,${Buffer.from(b).toString('base64')}`;
+    }
+    if (practice.firmaEmpresa) {
+      const b = practice.firmaEmpresa.buffer || practice.firmaEmpresa.data || practice.firmaEmpresa;
+      out.firmaEmpresa = `data:image/png;base64,${Buffer.from(b).toString('base64')}`;
+    }
+
+    res.json({ practice: out });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener la práctica', err });
+  }
+});
+
 
 
 module.exports = router;

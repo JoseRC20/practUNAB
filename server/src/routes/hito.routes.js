@@ -45,5 +45,7 @@ router.get('/student/:studentId', auth, hitosCtrl.getHitosByStudent);
 router.get('/:id', auth, hitosCtrl.getHitoById);
 router.post('/', auth, upload.single('file'), hitosCtrl.createOrUploadHitoFile);
 router.put('/:id/status', auth, hitosCtrl.updateHitoStatus);
+// Serve an uploaded file for a hito by index: /api/hitos/:id/file/:idx
+router.get('/:id/file/:idx', auth, hitosCtrl.downloadHitoFile);
 
 module.exports = router;

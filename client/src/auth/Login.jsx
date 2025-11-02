@@ -27,18 +27,39 @@ export default function Login() {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
             });
 
             if (response.ok) {
                 const data = await response.json();
                 alert("Login exitoso");
-                saveToken(data.token); // Actualiza el token en el Context API
-                localStorage.setItem("authToken", data.token); // Guarda el token en localStorage
-                navigate("/HomeAlumno"); // Redirige al HomeAlumno
+                // Support both legacy { token } and new { tokens: { access, refresh }, user }
+                const accessToken = data.tokens?.access || data.token;
+                if (accessToken) {
+                    saveToken(accessToken); // update context
+                    localStorage.setItem("authToken", accessToken);
+                }
+
+                const userRole = data.user?.role || role;
+                // Navigate based on role
+                // persist role for UI components that read it
+                localStorage.setItem('userRole', userRole);
+
+                if (userRole === 'student') {
+                    navigate("/HomeAlumno");
+                } else if (userRole === 'admin') {
+                    navigate("/GestionUser");
+                } else if (userRole === 'secretary') {
+                    navigate("/DashboardSecretaria");
+                } else if (userRole === 'professor') {
+                    navigate("/professor/dashboard");
+                } else {
+                    // default landing for other roles
+                    navigate("/");
+                }
             } else {
                 const error = await response.json();
-                alert(error.message);
+                alert(error.error || error.message || 'Error al iniciar sesión');
             }
         } catch (err) {
             console.error("Error:", err);

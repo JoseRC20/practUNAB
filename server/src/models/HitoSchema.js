@@ -16,7 +16,7 @@ const HitosSchema = new mongoose.Schema({
     description: { type: String, default: '' },
     status: {
         type: String,
-        enum: ['no_iniciado', 'enviado'],
+        enum: ['no_iniciado', 'enviado', 'aprobado', 'rechazado'],
         default: 'no_iniciado',
         index: true
     },

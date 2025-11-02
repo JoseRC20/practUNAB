@@ -17,6 +17,7 @@ export default function RoleSelector() {
                 <button className="btn btn-danger my-3" onClick={() => handleRole('student')}>Alumno</button>
                 <button className="btn btn-danger my-3" onClick={() => handleRole('professor')}>Profesor</button>
                 <button className="btn btn-danger my-3" onClick={() => handleRole('secretary')}>Secretaria</button>
+                <button className="btn btn-danger my-3" onClick={() => handleRole('admin')}>Admin</button>
             </div>
         </div>
     );

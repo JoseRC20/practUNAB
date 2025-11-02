@@ -383,7 +383,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="firmaAlumno"
                         name="firmaAlumno"
-                        accept=".png, .pdf" /* Permite solo archivos PNG o PDF */
+                        accept=".png" /* Permite solo archivos PNG o PDF */
                         onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />
@@ -393,7 +393,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="firmaEmpresa"
                         name="firmaEmpresa"
-                        accept=".png, .pdf" /* Permite solo archivos PNG o PDF */
+                        accept=".png" /* Permite solo archivos PNG o PDF */
                         onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />
