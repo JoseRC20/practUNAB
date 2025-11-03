@@ -6,7 +6,8 @@ exports.getMe = async (req, res, next) => {
     // Return the student's profile, excluding sensitive fields and populating related data
     const profile = await StudentProfile.findOne({ user: req.user.id })
       .select('-password -__v')
-      .populate('user', 'firstName lastNamePaternal lastNameMaternal email')
+      // include rut from the linked User as well so front-end can read it from profile.user.rut
+      .populate('user', 'firstName lastNamePaternal lastNameMaternal email rut')
       .populate('practices')
       .lean();
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
@@ -31,7 +32,7 @@ exports.upsertMe = async (req, res, next) => {
 
     const profile = await StudentProfile.findOne({ user: req.user.id })
       .select('-password -__v')
-      .populate('user', 'firstName lastNamePaternal lastNameMaternal email')
+      .populate('user', 'firstName lastNamePaternal lastNameMaternal email rut')
       .populate('practices')
       .lean();
 

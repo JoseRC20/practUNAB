@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 
 export default function PerfilAlumno({ profile }) {
   const navigate = useNavigate();
@@ -11,14 +12,48 @@ export default function PerfilAlumno({ profile }) {
   const [practiceStatus, setPracticeStatus] = useState(false);
   const [endDate, setEndDate] = useState(false);
   const [isApprovedBySecretary, setIsApprovedBySecretary] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
   // Re-run when `profile` changes (e.g. after async login/fetch)
+
+  const mapProfileToUser = (profile) => ({
+    name: profile.Names || (profile.user && profile.user.firstName) || '',
+    lastNamePaternal: profile.lastNamePaternal || (profile.user && profile.user.lastNamePaternal) || '',
+    lastNameMaternal: profile.lastNameMaternal || (profile.user && profile.user.lastNameMaternal) || '',
+    email: profile.institutionalEmail || (profile.user && profile.user.email) || '',
+    rut: profile.rut || (profile.user && profile.user.rut) || '',
+    phone: profile.phone || (profile.user && profile.user.phone) || '',
+    supervisorName:
+      profile.practices && profile.practices.length
+        ? profile.practices[profile.practices.length - 1].supervisorNombre
+        : '',
+    supervisorEmail:
+      profile.practices && profile.practices.length
+        ? profile.practices[profile.practices.length - 1].supervisorEmail
+        : '',
+    startDate:
+      profile.practices && profile.practices.length
+        ? profile.practices[profile.practices.length - 1].fechaInicioPractica
+        : '',
+    endDate:
+      profile.practices && profile.practices.length
+        ? profile.practices[profile.practices.length - 1].fechaTerminoPractica
+        : '',
+    practiceStatus:
+      profile.practices && profile.practices.length
+        ? profile.practices[profile.practices.length - 1].status
+        : profile.status || 'no iniciado',
+  });
+
   if (profile) {
     const mapped = {
       name: profile.Names || (profile.user && profile.user.firstName) || '',
       lastNamePaternal: profile.lastNamePaternal || (profile.user && profile.user.lastNamePaternal) || '',
+      lastNameMaternal: profile.lastNameMaternal || (profile.user && profile.user.lastNameMaternal) || '',
+      rut: profile.rut || (profile.user && profile.user.rut) || '',
       email: profile.institutionalEmail || (profile.user && profile.user.email) || '',
+      phone: profile.phone || (profile.user && profile.user.phone) || '',
       supervisorName:
         profile.practices && profile.practices.length
           ? profile.practices[profile.practices.length - 1].supervisorNombre
@@ -45,21 +80,46 @@ export default function PerfilAlumno({ profile }) {
     setPracticeStatus(mapped.practiceStatus || 'no iniciado');
     setIsApprovedBySecretary((mapped.practiceStatus || '') === 'aprobado');
   } else {
-    // fallback to localStorage if login didn't populate `profile` yet
-    const storedUser = localStorage.getItem("userData");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setEndDate(parsedUser.endDate || "");
-        setPracticeStatus(parsedUser.practiceStatus || parsedUser.status || 'no iniciado');
-        setIsApprovedBySecretary((parsedUser.practiceStatus || parsedUser.status || '') === 'aprobado');
-      } catch (e) {
-        console.error("Failed to parse userData from localStorage", e);
+    // If no profile prop, try to fetch the student's profile using the token
+    const fetchProfile = async () => {
+      // try localStorage first
+      const storedUser = localStorage.getItem("userData");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setEndDate(parsedUser.endDate || "");
+          setPracticeStatus(parsedUser.practiceStatus || parsedUser.status || 'no iniciado');
+          setIsApprovedBySecretary((parsedUser.practiceStatus || parsedUser.status || '') === 'aprobado');
+          return;
+        } catch (e) {
+          console.error("Failed to parse userData from localStorage", e);
+        }
       }
-    }
+
+      if (!token) return;
+      try {
+        const res = await fetch('http://localhost:5000/api/students/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          console.error('Failed to fetch student profile', await res.text());
+          return;
+        }
+        const data = await res.json();
+        const p = data.profile || data;
+        const mapped = mapProfileToUser(p);
+        setUser(mapped);
+        setEndDate(mapped.endDate || "");
+        setPracticeStatus(mapped.practiceStatus || 'no iniciado');
+        setIsApprovedBySecretary((mapped.practiceStatus || '') === 'aprobado');
+      } catch (err) {
+        console.error('Error fetching profile in PerfilAlumno:', err);
+      }
+    };
+    fetchProfile();
   }
-}, [profile]);
+}, [profile, token]);
 
   // identity editing disabled (no-op)
 
@@ -127,15 +187,25 @@ export default function PerfilAlumno({ profile }) {
   }
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 mb-5">
+      <button className="btn btn-secondary mb-3" onClick={() => navigate('/HomeAlumno')}>Volver</button>
+      <h2 className="text-center">Perfil Estudiante</h2>
+      <span className="d-block w-50 bg-danger my-2 mx-auto mb-2" style={{height:'5px'}}></span>
+      <p>Aquí encontrará sus datos personales</p>
       <div className="card">
         <div className="card-header bg-danger text-white">
           <h2>Perfil de Usuario</h2>
         </div>
         <div className="card-body">
-            <h4 className="card-title">{`${user.name} ${user.lastNamePaternal || ''}`.trim()}</h4>
+            <h4 className="card-title">{`${user.name} ${user.lastNamePaternal || ''} ${user.lastNameMaternal || ''}`.trim()}</h4>
             <p className="card-text mt-4">
               <strong>Correo Institucional:</strong> {user.email}
+            </p>
+            <p className="card-text mt-4">
+              <strong>RUT:</strong> {user.rut}
+            </p>
+            <p className="card-text mt-4">
+              <strong>Celular:</strong> {user.phone}
             </p>
 
           {/* Show practice status */}
@@ -210,9 +280,6 @@ export default function PerfilAlumno({ profile }) {
               )}
             </>
           )}
-          <button type="button" className="btn btn-secondary" onClick={handleLogout}>
-            Cerrar Sesión
-          </button>
         </div>
       </div>
     </div>

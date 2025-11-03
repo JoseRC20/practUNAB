@@ -48,10 +48,14 @@ export default function HomeAlumno() {
     }, [token, navigate]);
 
     return (
-        <div className="d-flex vh-100"> {/* Contenedor principal */}
-            <div className="flex-grow-1 p-3"> {/* Contenido principal */}
+        <div > {/* Contenedor principal */}
+            <h1 className="text-3xl font-bold text-center mt-4">Bienvenido/a, {userName || 'Alumno'}</h1>
+            <span className="d-block w-50 bg-danger my-2 mx-auto mb-2" style={{height:'5px'}}></span>
+            <p class="text-center text-gray-600 mt-2">
+                Aquí puedes iniciar tu práctica, subir hitos y revisar tu información.
+            </p>
+            <div> {/* Contenido principal */}
                 <Buttons />
-                {profile ? <PerfilAlumno profile={profile} /> : <PerfilAlumno />}
             </div> {/* Cierra el contenedor principal correctamente */}
             
         </div>

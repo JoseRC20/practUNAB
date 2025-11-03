@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../context/AuthContext';
+import validateRUT from '../utils/rut';
 import { useNavigate } from 'react-router-dom';
 
 export default function FormAlumno() {
@@ -47,6 +48,12 @@ export default function FormAlumno() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // validate empresa RUT before submitting
+        const vat = validateRUT(formData.empresaRut);
+        if (!vat || !vat.valid) {
+            alert('R.U.T. de la empresa inválido. Verifique el formato.');
+            return;
+        }
         try {
             const fd = new FormData();
 
@@ -97,9 +104,11 @@ export default function FormAlumno() {
     ];
 
     return (
-        <div className="container mt-5">
+        <div className="container mt-5 mb-5">
+            <button className="btn btn-secondary mb-3" onClick={() => navigate('/HomeAlumno')}>Volver</button>
             <h2>Formulario de Alumno</h2>
-            <form onSubmit={handleSubmit}>
+            <p>En este formulario usted debe ingresar los datos relacionados a lo que será su práctica profesional</p>
+            <form onSubmit={handleSubmit} className='container shadow-sm border rounded p-4'>
                 <div className="mb-3">
                     <label htmlFor="fecha_inicio" className="form-label">Fecha Inicio Práctica</label>
                     <input
@@ -138,15 +147,15 @@ export default function FormAlumno() {
                         disabled={status === "aprobado"}
                     >
                         <option value="">-- Selecciona una carrera --</option>
-                        <option value="Ing. Civil Industrial">Ing. Civil Industrial</option>
+                        {/*<option value="Ing. Civil Industrial">Ing. Civil Industrial</option>
                         <option value="Ing. Civil Informática">Ing. Civil Informática</option>
-                        <option value="Ing. Industrial">Ing. Industrial</option>
+                        <option value="Ing. Industrial">Ing. Industrial</option>*/}
                         <option value="Ing. Computación e Informática">Ing. Computación e Informática</option>
-                        <option value="Ing. Logística y Transporte">Ing. Logística y Transporte</option>
+                        {/*<option value="Ing. Logística y Transporte">Ing. Logística y Transporte</option>
                         <option value="Ing. Gestión Informática">Ing. Gestión Informática</option>
                         <option value="Ing. Seguridad y Prevención de Riesgos">Ing. Seguridad y Prevención de Riesgos</option>
                         <option value="Ing. Telecomunicaciones">Ing. Telecomunicaciones</option>
-                        <option value="Ing. Automatización y Robótica">Ing. Automatización y Robótica</option>
+                        <option value="Ing. Automatización y Robótica">Ing. Automatización y Robótica</option>*/}
                     </select>
                 </div>
                 <div className='mb-3'>
@@ -167,6 +176,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaNombre"
                         name="empresaNombre"
+                        placeholder='Empresa inventada S.A'
                         value={formData.empresaNombre || ''}
                         onChange={handleChange}
                         required
@@ -178,6 +188,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaRut"
                         name="empresaRut"
+                        placeholder='76.837.324-8'
                         value={formData.empresaRut || ''}
                         onChange={handleChange}
                         required
@@ -189,6 +200,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaGiro"
                         name="empresaGiro"
+                        placeholder='Desarrollo de software'
                         value={formData.empresaGiro || ''}
                         onChange={handleChange}
                         required
@@ -200,6 +212,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaDireccion"
                         name="empresaDireccion"
+                        placeholder='Av. Siempre Viva 123'
                         value={formData.empresaDireccion || ''}
                         onChange={handleChange}
                         required
@@ -248,6 +261,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaTelefono"
                         name="empresaTelefono"
+                        placeholder='+562...'
                         value={formData.empresaTelefono || ''}
                         onChange={handleChange}
                         required
@@ -259,17 +273,19 @@ export default function FormAlumno() {
                         className="form-control"
                         id="empresaWeb"
                         name="empresaWeb"
+                        placeholder='www.empresainventada.cl'
                         value={formData.empresaWeb || ''}
                         onChange={handleChange}
                         required
                         disabled={status === "aprobado"}
                     />
-                    <label htmlFor="empresaEmail" className="form-label">e-mail</label>
+                    <label htmlFor="empresaEmail" className="form-label">Correo</label>
                     <input
                         type="email"
                         className="form-control"
                         id="empresaEmail"
                         name="empresaEmail"
+                        placeholder='empresa_inventada@contacto.cl'
                         value={formData.empresaEmail || ''}
                         onChange={handleChange}
                         required
@@ -301,7 +317,7 @@ export default function FormAlumno() {
                         required
                         disabled={status === "aprobado"}
                     />
-                    <label htmlFor="cartaEmail" className="form-label">e-mail</label>
+                    <label htmlFor="cartaEmail" className="form-label">Correo</label>
                     <input
                         type="email"
                         className="form-control"
@@ -344,12 +360,13 @@ export default function FormAlumno() {
                         className="form-control"
                         id="supervisorTelefono"
                         name="supervisorTelefono"
+                        placeholder='+569...'
                         value={formData.supervisorTelefono || ''}
                         onChange={handleChange}
                         required
                         disabled={status === "aprobado"}
                     />
-                    <label htmlFor="supervisorEmail" className="form-label">e-mail</label>
+                    <label htmlFor="supervisorEmail" className="form-label">Correo</label>
                     <input
                         type="email"
                         className="form-control"
@@ -383,7 +400,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="firmaAlumno"
                         name="firmaAlumno"
-                        accept=".png" /* Permite solo archivos PNG o PDF */
+                        accept=".png" /* Permite solo archivos PNG*/
                         onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />
@@ -393,7 +410,7 @@ export default function FormAlumno() {
                         className="form-control"
                         id="firmaEmpresa"
                         name="firmaEmpresa"
-                        accept=".png" /* Permite solo archivos PNG o PDF */
+                        accept=".png" /* Permite solo archivos PNG*/
                         onChange={handleFileChange}
                         disabled={status === "aprobado"}
                     />

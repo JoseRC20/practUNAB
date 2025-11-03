@@ -82,6 +82,7 @@ export default function Login() {
                         className="form-control"
                         id="email"
                         name="email" // Added name attribute to bind with formData
+                        placeholder='correoinstitucional@uandresbello.edu'
                         value={formData.email} // Corrected to use formData.email
                         onChange={handleChange}
                         required
@@ -94,16 +95,12 @@ export default function Login() {
                         className="form-control"
                         id="password"
                         name="password" // Added name attribute to bind with formData
+                        placeholder='Su rut (sin puntos ni guíon)'
                         value={formData.password} // Corrected to use formData.password
                         onChange={handleChange}
                         required
                     />
                 </div>
-                {role === 'student' && (
-                    <div className="mb-3">
-                        <Link to="/registro">Si no tienes cuenta, registrate</Link>
-                    </div>
-                )}
                 <button type="submit" className="btn btn-primary">
                     Iniciar sesión
                 </button>

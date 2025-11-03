@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server/src/server.js",
-    "backfill:professors": "node server/scripts/backfill_professor_links.js"
+    "start": "node server/src/server.js"
   },
   "dependencies": {
     "bcrypt": "^5",
@@ -22,7 +21,6 @@
     "helmet": "^7",
     "joi": "^17",
     "jsonwebtoken": "^9",
-    "jspdf": "^3.0.3",
     "mongodb": "^6.20.0",
     "mongoose": "^8",
     "morgan": "^1",

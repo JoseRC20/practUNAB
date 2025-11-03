@@ -1,6 +1,7 @@
 // ...existing code...
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hitos() {
     const [hito1File, setHito1File] = useState(null);
@@ -9,6 +10,7 @@ export default function Hitos() {
     const [hitosMap, setHitosMap] = useState({});
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
     const getToken = () => localStorage.getItem('authToken');
 
@@ -164,6 +166,32 @@ export default function Hitos() {
         }
     };
 
+    const downloadHitoFile = async (hitoId, idx, fileName) => {
+        const token = getToken();
+        if (!token) return alert('Debe iniciar sesión para descargar el archivo.');
+        try {
+            const res = await fetch(`http://localhost:5000/api/hitos/${hitoId}/file/${idx}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const txt = await res.text().catch(() => '');
+                throw new Error(txt || 'Error descargando archivo');
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName || `hito-${hitoId}-${idx}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('downloadHitoFile error', err);
+            alert(err.message || 'Error descargando archivo');
+        }
+    };
+
     const handleSubmit = async (e) => {
         // opcional: subir ambos a la vez si hay archivos seleccionados
         e.preventDefault();
@@ -206,64 +234,69 @@ export default function Hitos() {
         console.log('Hitos map:', hitosMap, 'loading:', loading, 'message:', message);
     }, [hitosMap, loading, message]);
 
+    const badgeFor = (status) => {
+        const s = String(status || '').toLowerCase();
+        if (s.includes('aprob')) return 'bg-success';
+        if (s.includes('rechaz')) return 'bg-danger';
+        if (s.includes('pend')) return 'bg-warning text-dark';
+        if (s === 'no_iniciado' || s.includes('noiniciado')) return 'bg-secondary';
+        return 'bg-info';
+    };
+
     return (
-        <div className="container mt-5">
-            <h2>Subir Archivos para Hitos</h2>
+        <div className="container my-4" style={{maxWidth: '900px'}}>
+            <button className="btn btn-secondary mb-3" onClick={() => navigate('/HomeAlumno')}>Volver</button>
+            <h2 className="mb-4">Subir archivos para hitos</h2>
+            <p>En esta sección usted podrá subir los Hitos I y II en documento PDF o Word</p>
 
             {loading && <div className="alert alert-info">Cargando...</div>}
             {message && <div className="alert alert-secondary">{message}</div>}
 
-            <form>
-                <div className="mb-3">
-                    <label htmlFor="hito1" className="form-label">
-                        Hito 1 — Estado: {hitosMap[1]?.status || 'no_iniciado'}
-                    </label>
-                    {hitosMap[1] && hitosMap[1].reviewerComments && (
-                        <div className="alert alert-info mt-2">Observación profesor: {hitosMap[1].reviewerComments}</div>
-                    )}
-                    <input
-                        type="file"
-                        className="form-control"
-                        id="hito1"
-                        accept=".doc,.docx,.pdf"
-                        onChange={(e) => handleFileChange(e, setHito1File)}
-                        disabled={isDisabledFor(1)}
-                    />
-                    <button
-                        type="button"
-                        className="btn btn-primary mt-2"
-                        onClick={() => uploadSingleMilestone(1)}
-                        disabled={loading || isDisabledFor(1)}
-                    >
-                        Enviar Hito 1
-                    </button>
-                </div>
+            {[1,2].map(n => {
+                const info = hitosMap[n] || {};
+                const status = info.status || 'no_iniciado';
+                const files = info.files || [];
+                const disabled = isDisabledFor(n);
+                return (
+                    <div className="card mb-3" key={n}>
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                <h5 className="mb-0">Hito {n}</h5>
+                                <span className={`badge ${badgeFor(status)}`}>{status}</span>
+                            </div>
 
-                <div className="mb-3">
-                    <label htmlFor="hito2" className="form-label">
-                        Hito 2 — Estado: {hitosMap[2]?.status || 'no_iniciado'}
-                    </label>
-                    {hitosMap[2] && hitosMap[2].reviewerComments && (
-                        <div className="alert alert-info mt-2">Observación profesor: {hitosMap[2].reviewerComments}</div>
-                    )}
-                    <input
-                        type="file"
-                        className="form-control"
-                        id="hito2"
-                        accept=".doc,.docx,.pdf"
-                        onChange={(e) => handleFileChange(e, setHito2File)}
-                        disabled={isDisabledFor(2)}
-                    />
-                    <button
-                        type="button"
-                        className="btn btn-primary mt-2"
-                        onClick={() => uploadSingleMilestone(2)}
-                        disabled={loading || isDisabledFor(2)}
-                    >
-                        Enviar Hito 2
-                    </button>
-                </div>
-            </form>
+                            {info.reviewerComments && (
+                                <div className="alert alert-info">Observación profesor: {info.reviewerComments}</div>
+                            )}
+
+                            <input
+                                type="file"
+                                className="form-control mb-3"
+                                id={`hito${n}`}
+                                accept=".doc,.docx,.pdf"
+                                onChange={(e) => handleFileChange(e, n === 1 ? setHito1File : setHito2File)}
+                                disabled={disabled}
+                            />
+
+                            {files.length > 0 && (
+                                <div className="text-muted small mb-2">Archivo enviado: {files[files.length-1].originalName || files[files.length-1].originalname || files[files.length-1].name || 'Archivo'}</div>
+                            )}
+
+                            <div className="d-flex gap-2">
+                                <button className="btn btn-primary" onClick={() => uploadSingleMilestone(n)} disabled={loading || disabled}>
+                                    📤 {files.length > 0 ? 'Reenviar' : `Enviar Hito ${n}`}
+                                </button>
+                                {files.length > 0 && info._id && (
+                                    <button className="btn btn-secondary" onClick={() => downloadHitoFile(info._id, files.length-1, files[files.length-1].originalName || 'hito.pdf')}>
+                                        Descargar
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+
         </div>
     );
 }

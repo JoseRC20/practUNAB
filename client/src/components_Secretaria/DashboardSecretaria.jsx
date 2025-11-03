@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 export default function DashboardSecretaria() {
     const { token } = useAuth();
     const [items, setItems] = useState([]);
+    const [allPractices, setAllPractices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -14,15 +15,29 @@ export default function DashboardSecretaria() {
         setLoading(true);
         setError(null);
             try {
-            const res = await fetch('http://localhost:5000/api/secretary/pending', {
+            // fetch pending items for the table
+            const pendingRes = await fetch('http://localhost:5000/api/secretary/pending', {
                 headers: { Authorization: 'Bearer ' + token }
             });
-            if (!res.ok) {
-                const j = await res.json().catch(() => ({}));
+            if (!pendingRes.ok) {
+                const j = await pendingRes.json().catch(() => ({}));
                 throw new Error(j.error || j.message || 'Error cargando pendientes');
             }
-            const data = await res.json();
-            setItems(data.items || []);
+            const pendingData = await pendingRes.json();
+            setItems(pendingData.items || []);
+
+            // fetch all practices to compute overall stats (approved/rejected/total)
+            const allRes = await fetch('http://localhost:5000/api/practices', {
+                headers: { Authorization: 'Bearer ' + token }
+            });
+            if (!allRes.ok) {
+                // if this fails, still show pending items but stats will fallback
+                console.warn('Failed to fetch all practices for stats');
+            } else {
+                const allData = await allRes.json();
+                // allData is expected to be an array of practices
+                setAllPractices(Array.isArray(allData) ? allData : (allData.items || allData));
+            }
         } catch (err) {
             setError(err.message || String(err));
         } finally {
@@ -34,12 +49,13 @@ export default function DashboardSecretaria() {
         navigate(`/secretary/view/${practiceId}`);
     }
 
-    // derive simple stats from the loaded items (practices)
+    // derive simple stats from the loaded allPractices (if available), otherwise fall back to items
+    const source = allPractices.length ? allPractices : items;
     const stats = {
-        total: items.length,
-        pending: items.filter(i => String(i.status || '').toLowerCase().includes('pendient')).length,
-        approved: items.filter(i => ['aprobado', 'aprobada'].includes(String(i.status || '').toLowerCase())).length,
-        reject: items.filter(i => ['rechazado', 'rechazada'].includes(String(i.status || '').toLowerCase())).length
+        total: source.length,
+        pending: source.filter(i => String(i.status || '').toLowerCase().includes('pendient')).length,
+        approved: source.filter(i => ['aprobado', 'aprobada'].includes(String(i.status || '').toLowerCase())).length,
+        reject: source.filter(i => ['rechazado', 'rechazada'].includes(String(i.status || '').toLowerCase())).length
     };
 
     const changeStatus = async (practiceId, status) => {
@@ -100,7 +116,7 @@ export default function DashboardSecretaria() {
                     <div className="card h-100 shadow-sm">
                         <div className="card-body">
                             <small className="text-muted">Rechazadas</small>
-                            <h3 className="mt-2 mb-0">{stats.approved}</h3>
+                                <h3 className="mt-2 mb-0">{stats.reject}</h3>
                         </div>
                     </div>
                 </div>
