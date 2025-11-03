@@ -130,8 +130,7 @@ export default function ViewForm() {
 
   return (
     <div className="container mt-4">
-      <button className="btn btn-secondary mb-3" onClick={() => navigate('/DashboardSecretaria')}>Volver</button>
-      <h3 className='mb-3'>Formulario de práctica</h3>
+      <h3>Ver Formulario </h3>
       <div className="card p-3 mb-3">
         <h5>Datos estudiante</h5>
         <p>Nombre : {practice.student?.firstName} {practice.student?.lastNamePaternal} {practice.student?.lastNameMaternal} ({practice.student?.email})</p>
@@ -174,6 +173,7 @@ export default function ViewForm() {
           <div className="ms-auto">
             <button className="btn btn-success me-2" onClick={() => changeStatus('aprobado')}>Aprobar</button>
             <button className="btn btn-danger" onClick={() => changeStatus('rechazado')}>Rechazar</button>
+            <button className="btn btn-secondary ms-2" onClick={() => navigate('/DashboardSecretaria')}>Volver</button>
           </div>
         </div>
       </div>

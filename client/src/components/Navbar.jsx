@@ -3,6 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import LogoU from '../assets/Logo_Uandresbello.png';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Buttons from "../utils/Buttons"
+import { Button } from 'bootstrap/dist/js/bootstrap.bundle.min';
 
 export default function Navbar() {
     const { token, clearToken } = useAuth();
@@ -26,11 +28,12 @@ export default function Navbar() {
                         <h1 className='text-white'>practUNAB</h1>
                     </a>
                 </div>
-                {isLoggedIn && role === 'admin' || role === 'secretary' || role === 'professor' && (
+                {isLoggedIn && (
                     <button className="btn btn-outline-light ms-auto me-3" onClick={handleLogout}>
                         Cerrar sesión
                     </button>
                 )}
+
             </nav>
         </div>
     );
