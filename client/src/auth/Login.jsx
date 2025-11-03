@@ -46,16 +46,16 @@ export default function Login() {
                 localStorage.setItem('userRole', userRole);
 
                 if (userRole === 'student') {
-                    navigate("/HomeAlumno");
+                    navigate("/HomeAlumno", { replace: true });
                 } else if (userRole === 'admin') {
-                    navigate("/GestionUser");
+                    navigate("/GestionUser", { replace: true });
                 } else if (userRole === 'secretary') {
-                    navigate("/DashboardSecretaria");
-                } else if (userRole === 'professor') {
-                    navigate("/professor/dashboard");
+                    navigate("/DashboardSecretaria", { replace: true });
+                } else if (userRole === 'professor' ) {
+                    navigate("/professor/dashboard", { replace: true });
                 } else {
                     // default landing for other roles
-                    navigate("/");
+                    navigate("/", { replace: true });
                 }
             } else {
                 const error = await response.json();
