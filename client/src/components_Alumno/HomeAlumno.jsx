@@ -3,19 +3,19 @@ import { useAuth } from '../context/AuthContext';
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from 'react-router-dom';
 import Buttons from "../utils/Buttons";
-import PerfilAlumno from "./PerfilAlumno";
 
 export default function HomeAlumno() {
     const navigate = useNavigate();
     const [userName, setUserName] = useState(""); // Nombre del alumno
     const [notifications, setNotifications] = useState([]); // Notificaciones
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [profile, setProfile] = useState(null);
 
 
     useEffect(() => {
         console.log("Token retrieved from Context:", token)
-        const role = localStorage.getItem('userRole'); // Recupera el rol del usuario
+        // Prefer role from AuthContext.user, fallback to localStorage for backwards compatibility
+        const role = user?.role || localStorage.getItem('userRole'); // Recupera el rol del usuario
         if (role !== 'student') { // Verifica si el rol no es de Alumno
             alert('Acceso denegado. Solo los alumnos pueden acceder a esta página.');
             navigate('/'); // Redirige al inicio

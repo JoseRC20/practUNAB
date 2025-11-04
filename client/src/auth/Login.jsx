@@ -1,110 +1,123 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useAuth } from '../context/AuthContext';
 
+const API_BASE = import.meta.env?.VITE_API_BASE ?? 'http://localhost:5000/api';
+
 export default function Login() {
-    const { role } = useParams(); // Get the role from the URL
-    const navigate = useNavigate(); // Hook para redirigir
-    const { token, saveToken } = useAuth();
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-    console.log("Login component - role from URL:", role);
+  const { role } = useParams();              // p.ej., /login/:role
+  const navigate = useNavigate();
+  const { token, login } = useAuth();        // 👈 una sola vez
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-        console.log(formData);
-    };
+  useEffect(() => {
+    // Solo informativo
+    console.log('Login component - role from URL:', role);
+    console.log('Token (context):', token);
+  }, []); // eslint-disable-line
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await fetch("http://localhost:5000/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
-            });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    // evita mutación: crea nueva copia
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-            if (response.ok) {
-                const data = await response.json();
-                alert("Login exitoso");
-                // Support both legacy { token } and new { tokens: { access, refresh }, user }
-                const accessToken = data.tokens?.access || data.token;
-                if (accessToken) {
-                    saveToken(accessToken); // update context
-                    localStorage.setItem("authToken", accessToken);
-                }
+  const resolveDest = (userRole) => {
+    switch (userRole) {
+      case 'student':   return '/HomeAlumno';
+      case 'admin':     return '/GestionUser';
+      case 'secretary': return '/DashboardSecretaria';
+      case 'professor': return '/professor/dashboard';
+      default:          return '/';
+    }
+  };
 
-                const userRole = data.user?.role || role;
-                // Navigate based on role
-                // persist role for UI components that read it
-                localStorage.setItem('userRole', userRole);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const resp = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // si tu backend necesita role, puedes enviar: { ...formData, role }
+        body: JSON.stringify({ email: formData.email.trim(), password: formData.password })
+      });
 
-                if (userRole === 'student') {
-                    navigate("/HomeAlumno", { replace: true });
-                } else if (userRole === 'admin') {
-                    navigate("/GestionUser", { replace: true });
-                } else if (userRole === 'secretary') {
-                    navigate("/DashboardSecretaria", { replace: true });
-                } else if (userRole === 'professor' ) {
-                    navigate("/professor/dashboard", { replace: true });
-                } else {
-                    // default landing for other roles
-                    navigate("/", { replace: true });
-                }
-            } else {
-                const error = await response.json();
-                alert(error.error || error.message || 'Error al iniciar sesión');
-            }
-        } catch (err) {
-            console.error("Error:", err);
-            alert("Error al iniciar sesión");
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || err.message || 'Error al iniciar sesión');
+      }
+
+      const data = await resp.json();
+
+      // Compatibilidad: {tokens:{access}, user} o {token, user}
+      const accessToken = data?.tokens?.access || data?.token;
+      const userObj     = data?.user ?? null;
+
+        if (!accessToken) throw new Error('No se recibió token de acceso.');
+        const roleFromUrl = role || 'student';   // /login/:role
+        if (!userObj) {
+        userObj = { role: roleFromUrl, email: formData.email.trim() };
+        } else if (!userObj.role) {
+        userObj = { ...userObj, role: roleFromUrl };
         }
-    };
 
-    useEffect(() => {
-            console.log("Token retrieved from Context:", token)
-    }, []);
+        // Guarda sesión completa en el contexto
+        login({ user: userObj, token: accessToken });
 
-    return (
-        <div className="container mt-5">
-            <h1>Login</h1>
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Correo Electrónico</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        id="email"
-                        name="email" // Added name attribute to bind with formData
-                        placeholder='correoinstitucional@uandresbello.edu'
-                        value={formData.email} // Corrected to use formData.email
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Contraseña</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        id="password"
-                        name="password" // Added name attribute to bind with formData
-                        placeholder='Su rut (sin puntos ni guíon)'
-                        value={formData.password} // Corrected to use formData.password
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                    Iniciar sesión
-                </button>
-            </form>
+        // Redirige según rol (inmediato)
+        const dest = userObj.role === 'student' ? '/HomeAlumno'
+                : userObj.role === 'admin' ? '/GestionUser'
+                : userObj.role === 'secretary' ? '/DashboardSecretaria'
+                : userObj.role === 'professor' ? '/professor/dashboard'
+                : '/';
+        navigate(dest, { replace: true });
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="container mt-5" style={{ maxWidth: 480 }}>
+      <h1 className="mb-3">Login</h1>
+      <form onSubmit={handleSubmit} className="card p-4">
+        <div className="mb-3">
+          <label htmlFor="email" className="form-label">Correo Electrónico</label>
+          <input
+            type="email"
+            className="form-control"
+            id="email"
+            name="email"
+            placeholder="correoinstitucional@uandresbello.edu"
+            value={formData.email}
+            onChange={handleChange}
+            autoComplete="username"
+            required
+          />
         </div>
-    );
+        <div className="mb-3">
+          <label htmlFor="password" className="form-label">Contraseña</label>
+          <input
+            type="password"
+            className="form-control"
+            id="password"
+            name="password"
+            placeholder="Su rut (sin puntos ni guión)"
+            value={formData.password}
+            onChange={handleChange}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Ingresando…' : 'Iniciar sesión'}
+        </button>
+      </form>
+    </div>
+  );
 }
