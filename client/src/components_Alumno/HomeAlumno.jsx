@@ -49,10 +49,11 @@ export default function HomeAlumno() {
 
     return (
         <div > {/* Contenedor principal */}
-            <h1 className="text-3xl font-bold text-center mt-4">Bienvenido/a, {userName || 'Alumno'}</h1>
+            <h1 className="text-3xl font-bold text-center mt-4">Bienvenido/a</h1>
+            <h3 className="text-3xl font-bold text-center "> {userName || 'Alumno'}</h3>
             <span className="d-block w-50 bg-danger my-2 mx-auto mb-2" style={{height:'5px'}}></span>
-            <p class="text-center text-gray-600 mt-2">
-                Aquí puedes iniciar tu práctica, subir hitos y revisar tu información.
+            <p className="text-center mt-3 mb-4">
+                Esta plataforma te acompañará durante tu práctica profesional. Desde aquí puedes iniciar tu proceso, subir tus hitos y revisar tu perfil.
             </p>
             <div> {/* Contenido principal */}
                 <Buttons />
