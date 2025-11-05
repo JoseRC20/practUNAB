@@ -84,7 +84,7 @@ export default function Login() {
 
   return (
     <div className="container mt-5" style={{ maxWidth: 480 }}>
-      <h1 className="mb-3">Login</h1>
+      <h1 className="mb-3">Iniciar Sesión</h1>
       <form onSubmit={handleSubmit} className="card p-4">
         <div className="mb-3">
           <label htmlFor="email" className="form-label">Correo Electrónico</label>
