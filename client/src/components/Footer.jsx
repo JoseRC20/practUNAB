@@ -14,7 +14,7 @@ export default function Footer() {
         <footer
             className="footer py-3"
             style={{
-                backgroundColor: '#313131ff',
+                backgroundColor: '#2E3641',
                 position: 'fixed',
                 left: 0,
                 right: 0,
